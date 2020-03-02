@@ -1,0 +1,11 @@
+--- a/lib/AnyEvent/Handle.pm	2019-02-25 18:36:33.000000000 -0700
++++ b/lib/AnyEvent/Handle.pm	2019-02-26 06:52:43.730760142 -0700
+@@ -2113,7 +2113,7 @@
+    }
+ 
+    $self->{_on_starttls}
+-      and Net::SSLeay::state ($self->{tls}) == Net::SSLeay::ST_OK ()
++      and Net::SSLeay::state ($self->{tls}) == 1
+       and (delete $self->{_on_starttls})->($self, 1, "TLS/SSL connection established");
+ }
+ 

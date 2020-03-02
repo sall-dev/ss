@@ -1,0 +1,49 @@
+# Maintainer: Eric Bélanger <eric@archlinux.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - disabled vdpau
+
+pkgname=xine-lib
+pkgver=1.2.10
+pkgrel=1
+pkgdesc="A multimedia playback engine"
+arch=('x86_64')
+url="https://www.xine-project.org"
+license=('LGPL' 'GPL')
+depends=('libxvmc' 'ffmpeg' 'libxinerama' 'libnsl')
+makedepends=('wavpack' 'faad2' 'libmng' 'imagemagick' 'mesa' 'libmodplug'
+             'vcdimager' 'jack' 'aalib' 'libdca' 'a52dec' 'libmad' 'libdvdnav'
+             'libmpcdec' 'libcaca' 'libbluray' 'glu' 'gdk-pixbuf2')
+optdepends=('imagemagick: for using the imagemagick plugin' \
+            'jack: for using the jack plugin' \
+            'vcdimager: for using the vcd plugin' \
+            'glu: for using the opengl plugin' \
+            'wavpack: for using the wavpack plugin' \
+            'faad2: for using the faad plugin' \
+            'libmng: for using the mng plugin' \
+            'aalib: for using the aalib plugin' \
+            'libmodplug: for using the modplug plugin' \
+            'libdca: for using the dca plugin' \
+            'a52dec: for using the a52 plugin' \
+            'libmad: for using the mp3 plugin' \
+            'libdvdnav: for using the dvd plugin' \
+            'libmpcdec: for using the musepack plugin' \
+            'libcaca: for using the caca plugin' \
+            'libbluray: for using the bluray plugin' \
+            'smbclient: for using the samba plugin' \
+            'gdk-pixbuf2: for using the gdk-pixbuf plugin')
+source=(https://downloads.sourceforge.net/project/xine/xine-lib/$pkgver/xine-lib-$pkgver.tar.xz)
+sha256sums=('9cb3f069d3c1ffb7456ea91a936a85bbb07ac2ab7be1e9d0d2c94ffe4110dc57')
+
+build() {
+  cd ${pkgname}-${pkgver}
+  ./configure --prefix=/usr --with-wavpack --disable-vdpau --with-external-dvdnav \
+    --disable-optimizations 
+  sed -i -e 's/ -shared / -Wl,-O1,--as-needed\0/g' libtool
+  make
+}
+
+package() {
+  cd ${pkgname}-${pkgver}
+  make DESTDIR="${pkgdir}" install
+}

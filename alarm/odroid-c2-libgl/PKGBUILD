@@ -1,0 +1,52 @@
+# ODROID-C2 Mali GL Driver
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=8
+
+pkgbase=odroid-c2-libgl
+pkgname=("${pkgbase}-x11" "${pkgbase}-fb" "${pkgbase}-headers")
+pkgver=r6p1
+pkgrel=3
+_commit=6ad971051be6336cf042c7fc0d31f3a92a5c3d9f
+arch=('aarch64')
+url="http://www.hardkernel.com/"
+license=('Proprietary')
+depends=('mesa-libgl')
+makedepends=('git')
+source=("git+https://github.com/mdrjr/c2_mali.git#commit=${_commit}"
+        'mali-c2.conf'
+        '99-mali.rules')
+md5sums=('SKIP'
+         '40f5104200cfceb12b4623d219646d4e'
+         '88e938d52d0e02657fa5eca2efc6ee36')
+
+package_odroid-c2-libgl-x11() {
+  pkgdesc="ODROID-C2 Mali driver (X11)"
+  conflicts=('odroid-c2-libgl')
+  provides=('odroid-c2-libgl')
+
+  install -d "${pkgdir}"/usr/lib/mali-egl
+  install -d "${pkgdir}"/etc/ld.so.conf.d
+  cp -a c2_mali/x11/mali_libs/lib* "${pkgdir}"/usr/lib/mali-egl
+  cp "${srcdir}"/mali-c2.conf "${pkgdir}"/etc/ld.so.conf.d
+}
+
+package_odroid-c2-libgl-fb() {
+  pkgdesc="ODROID-C2 Mali driver (framebuffer)"
+  conflicts=('odroid-c2-libgl')
+  provides=('odroid-c2-libgl')
+
+  install -d "${pkgdir}"/usr/lib/mali-egl
+  install -d "${pkgdir}"/etc/ld.so.conf.d
+  install -d "${pkgdir}"/usr/lib/udev/rules.d
+  cp -a c2_mali/fbdev/mali_libs/lib* "${pkgdir}"/usr/lib/mali-egl
+  cp "${srcdir}"/mali-c2.conf "${pkgdir}"/etc/ld.so.conf.d
+  cp "${srcdir}"/99-mali.rules "${pkgdir}"/usr/lib/udev/rules.d
+}
+
+package_odroid-c2-libgl-headers() {
+  pkgdesc="ODROID-C2 Mali driver headers"
+
+  install -d "${pkgdir}"/usr/include
+  cp -a c2_mali/x11/mali_headers/{ump,umplock} "${pkgdir}"/usr/include
+}

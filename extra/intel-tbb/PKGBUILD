@@ -1,0 +1,40 @@
+# Maintainer: Felix Yan <felixonmars@archlinux.org>
+# Contributor: Stéphane Gaudreault <stephane@archlinux.org>
+# Contributor: Thomas Dziedzic < gostrc at gmail >
+# Contributor: Denis Martinez <deuns.martinez AT gmail.com>
+# Contributor: Bogdan Burlacu <bogdan.burlacu AT pm.me>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#        Romain Reignier <rom.reignier AT gmail.com>
+# - add specfic CXXFLAGS for ARM
+
+pkgname=intel-tbb
+pkgver=2020.1
+pkgrel=1
+pkgdesc='High level abstract threading library'
+arch=(x86_64)
+url='https://www.threadingbuildingblocks.org/'
+license=(GPL)
+depends=(gcc-libs)
+makedepends=(cmake inetutils)
+source=($pkgname-$pkgver.tar.gz::https://github.com/intel/tbb/archive/v$pkgver.tar.gz)
+sha256sums=('48d51c63b16787af54e1ee4aaf30042087f20564b4eecf9a032d5568bc2f0bf8')
+
+build() {
+  cd tbb-$pkgver
+  [[ $CARCH != "aarch64" ]] && CXXFLAGS+=" -DTBB_USE_GCC_BUILTINS=1 -D__TBB_64BIT_ATOMICS=0"
+  [[ $CARCH == "aarch64" ]] && CXXFLAGS+=" -DTBB_USE_GCC_BUILTINS=1 -D__TBB_64BIT_ATOMICS=1"
+  make
+}
+
+package() {
+  cd tbb-$pkgver
+  install -d "$pkgdir"/usr/lib
+  install -m755 build/linux_*/*.so* "$pkgdir"/usr/lib
+  install -d "$pkgdir"/usr/include
+  cp -a include/tbb "$pkgdir"/usr/include
+  cmake \
+    -DINSTALL_DIR="$pkgdir"/usr/lib/cmake/TBB \
+    -DSYSTEM_NAME=Linux -DTBB_VERSION_FILE="$pkgdir"/usr/include/tbb/tbb_stddef.h \
+    -P cmake/tbb_config_installer.cmake
+}

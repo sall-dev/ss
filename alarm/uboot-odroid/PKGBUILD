@@ -1,0 +1,86 @@
+# U-Boot: ODROID-X/X2/U2/U3
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgbase=uboot-odroid
+pkgname=('uboot-odroid' 'uboot-odroid-x')
+pkgver=2018.01
+pkgrel=1
+arch=('armv7h')
+url='http://www.denx.de/wiki/U-Boot/WebHome'
+license=('GPL')
+install=$pkgname.install
+backup=('boot/boot.txt' 'boot/boot.scr')
+makedepends=('bc' 'dtc145' 'git')
+_commit=dd9a970aa4accf5d266d334c0f319c674e933027
+source=("ftp://ftp.denx.de/pub/u-boot/u-boot-${pkgver}.tar.bz2"
+        "https://github.com/hardkernel/u-boot/raw/${_commit}/sd_fuse/bl1.HardKernel"
+        "https://github.com/hardkernel/u-boot/raw/${_commit}/sd_fuse/bl2.HardKernel"
+        "https://github.com/hardkernel/u-boot/raw/${_commit}/sd_fuse/tzsw.HardKernel"
+        "sd_fusing.sh"
+        '0001-Convert-odroid-to-use-distro_bootcmd.patch'
+        '0002-odroid-x-support.patch'
+        'boot.txt'
+        'mkscr')
+md5sums=('b42e45813369f4ae84490a481e531768'
+         '3ab6d3cc2061bc2590d60320254017c6'
+         '841502de02bd42f2898e36c89c260b0f'
+         'c38faafa02a6a1ae834457f378c82113'
+         '17909ae93a0ae7b4c155234040105035'
+         '1d0ac59d0e09c208b339c736514a0f67'
+         'ed8ecdf7de3d531a78d5d6f79a04d79e'
+         '5e34d3ee240745483c6f8946a2247dc8'
+         '021623a04afd29ac3f368977140cfbfd')
+
+prepare() {
+  cd u-boot-${pkgver}
+
+  git apply ../0001-Convert-odroid-to-use-distro_bootcmd.patch
+}
+
+build() {
+  cd u-boot-${pkgver}
+
+  unset CFLAGS
+  unset CXXFLAGS
+  unset CPPFLAGS
+
+  # build for X2/U2/U3
+  make distclean 
+  make odroid_config
+  echo 'CONFIG_IDENT_STRING=" Arch Linux ARM"' >> .config
+  make EXTRAVERSION=-${pkgrel}
+  mv u-boot-dtb.bin ../u-boot-dtb.bin
+
+  # patch and build for X
+  git apply ../0002-odroid-x-support.patch
+  make distclean
+  make odroid_config
+  echo 'CONFIG_IDENT_STRING=" Arch Linux ARM"' >> .config
+  make EXTRAVERSION=-${pkgrel}
+}
+
+package_uboot-odroid() {
+  pkgdesc="U-Boot for ODROID-X2/U2/U3"
+
+  cd u-boot-${pkgver}
+  mkdir -p ${pkgdir}/boot
+  cp ../u-boot-dtb.bin ${pkgdir}/boot/u-boot.bin
+  cp ../{{bl1,bl2,tzsw}.HardKernel,sd_fusing.sh} ${pkgdir}/boot
+
+  tools/mkimage -A arm -O linux -T script -C none -n "U-Boot boot script" -d ../boot.txt "${pkgdir}"/boot/boot.scr
+  cp ../{boot.txt,mkscr} "${pkgdir}"/boot
+}
+
+package_uboot-odroid-x() {
+  pkgdesc="U-Boot for ODROID-X"
+
+  cd u-boot-${pkgver}
+  mkdir -p ${pkgdir}/boot
+  cp u-boot-dtb.bin ${pkgdir}/boot/u-boot.bin
+  cp ../{{bl1,bl2,tzsw}.HardKernel,sd_fusing.sh} ${pkgdir}/boot
+
+  tools/mkimage -A arm -O linux -T script -C none -n "U-Boot boot script" -d ../boot.txt "${pkgdir}"/boot/boot.scr
+  cp ../{boot.txt,mkscr} "${pkgdir}"/boot
+}

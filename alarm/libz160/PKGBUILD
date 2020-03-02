@@ -1,0 +1,19 @@
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+# i.MX libz160 display library
+
+buildarch=4
+
+pkgname="libz160"
+pkgver=11.09.01
+pkgrel=1
+arch=('armv7h')
+pkgdesc="i.MX libz160 display library"
+url="http://www.freescale.com"
+license=('GPL2')
+source=("http://repository.timesys.com/buildsources/l/libz160-bin/libz160-bin-${pkgver}/libz160-bin-${pkgver}.tar.gz")
+md5sums=('7589d70fa10af21bedf8dc923e9fd150')
+
+package() {
+  cp -r ${srcdir}/libz160-bin-${pkgver}/usr ${pkgdir}
+}

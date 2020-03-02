@@ -1,0 +1,72 @@
+# Maintainer: Alexander Rødseth <rodseth@gmail.com>
+# Maintainer: Felix Yan <felixonmars@archlinux.org>
+# Contributor: T. Jameson Little <t.jameson.little at gmail dot com>
+# Contributor: Usagi Ito <usagi@WonderRabbitProject.net>
+# Contributor: siasia <http://pastebin.com/qsBEmNCw>
+# Contributor: Julien Nicoulaud <julien.nicoulaud@gmail.com>
+# Contributor: Jacob Bang <julemand101gmail.com>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - added source and sha512 for ARMv7h, AArch64 builds of Dart
+#  - configure paths and install symlinks for binaries shipped for arm
+
+buildarch=12
+
+pkgname=dart
+pkgver=2.7.1
+pkgrel=1
+pkgdesc='The dart programming language SDK'
+arch=('x86_64' 'armv7h' 'aarch64')
+url='https://www.dartlang.org/'
+depends=('bash')
+license=('BSD')
+makedepends=('setconf')
+options=('!strip')
+source_x86_64+=("$pkgname-$pkgver-64.zip::https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-x64-release.zip")
+source_armv7h+=("$pkgname-$pkgver-arm.zip::https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-arm-release.zip")
+source_aarch64+=("$pkgname-$pkgver-arm64.zip::https://storage.googleapis.com/dart-archive/channels/stable/release/latest/sdk/dartsdk-linux-arm64-release.zip")
+sha512sums_x86_64=('0a7a5d42e58703553f529b88caccd26af667757951718f75a0edce2b4c6e1037e2680929f28e17958423f51dc4385213064e151a1c5a84a20fd08dadc676d3d3')
+sha512sums_armv7h=('b5f25a1e49b7505ed01bb38d03cde5a13379edc318ded33e572a03beef68a8159e98e5e5f849231e33162a1cc0643d734bd03f8f9d4ac6ab1a08406bdc5b195a')
+sha512sums_aarch64=('9a73cd772b1ac8e5384eeaa3e2efd95cda7898b555ca83162f7e4ebc18e65a728b4ba723a1c48c5b5c49da3eb8962438083e9bb62666da0fdc430ae1a3c91ecb')
+
+prepare() {
+  # Fix permissions
+  find "$pkgname-sdk" -type d -exec chmod a+rx '{}' + \
+    -or -type f -exec chmod a+r '{}' +
+
+  cd "$pkgname-sdk/bin"
+
+  # Configure paths
+  for _f in dartanalyzer pub dartfmt dartdoc; do
+    setconf $_f BIN_DIR "/opt/$pkgname-sdk/bin"
+    setconf $_f PROG_NAME "/opt/$pkgname-sdk/bin/$_f"
+    setconf $_f SDK_DIR "/opt/$pkgname-sdk/"
+  done
+
+  # Extract license (AUTHORS and LICENSE files are missing)
+  head -n5 "../include/dart_api.h" > ../../LICENSE
+}
+
+package() {
+  # Create directories
+  install -d "$pkgdir"{"/opt/$pkgname-sdk",/usr/{bin,"share/doc/$pkgname-sdk"}}
+
+  # Package the files
+  cp -a "$pkgname-sdk/"* "$pkgdir/opt/$pkgname-sdk/"
+
+  # Set up symbolic links for the executables
+  for f in dart dartanalyzer pub dartfmt dartdoc dart2native dartaotruntime; do
+    ln -s "/opt/$pkgname-sdk/bin/$f" "$pkgdir/usr/bin/$f"
+  done
+
+  # Package samples and documentation
+  for f in samples about.html about_files; do
+    echo mv "$pkgdir/opt/$pkgname-sdk/$f" "$pkgdir/usr/share/doc/$pkgname/"
+  done
+
+  # BSD License
+  install -Dm644 LICENSE \
+    "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}
+
+# vim:set ts=2 sw=2 et:

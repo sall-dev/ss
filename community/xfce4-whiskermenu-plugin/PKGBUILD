@@ -1,0 +1,43 @@
+# Maintainer: Brad Fanella <cesura@archlinux.org>
+# Contributor: Alexander F Rødseth <xyproto@archlinux.org>
+# Contributor: Graeme Gott <graeme@gottcode.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - cmake with -DENABLE_LINK_TIME_OPTIMIZATION=off
+
+pkgname=xfce4-whiskermenu-plugin
+pkgver=2.4.2
+pkgrel=2
+pkgdesc='Menu for Xfce4'
+arch=('x86_64')
+url='https://gottcode.org/xfce4-whiskermenu-plugin/'
+groups=('xfce4-goodies')
+license=('GPL2')
+depends=('garcon' 'xfce4-panel' 'gtk3>=3.22')
+makedepends=('cmake' 'ninja')
+source=("https://archive.be.xfce.org/src/panel-plugins/xfce4-whiskermenu-plugin/${pkgver%.*}/xfce4-whiskermenu-plugin-$pkgver.tar.bz2"
+        '0001-Fix-loading-incorrect-icons-for-some-applications.patch')
+sha256sums=('fb2e1d44744d851c5339900e7af9068397028efa9ee5235a66ab273e95740dee'
+            '48943613ee63562bf0a55757ae81272400e87e462d0471a9cc753dccd59083cf')
+
+prepare() {
+	cd "$srcdir/$pkgname-$pkgver"
+
+	patch -Np1 < ../0001-Fix-loading-incorrect-icons-for-some-applications.patch
+}
+
+build() {
+	mkdir -p build
+	cd build
+	cmake "$srcdir/$pkgname-$pkgver" \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DENABLE_LINK_TIME_OPTIMIZATION=off \
+		-GNinja
+  	ninja
+}
+
+package() {
+	DESTDIR="$pkgdir" ninja -C build install
+}

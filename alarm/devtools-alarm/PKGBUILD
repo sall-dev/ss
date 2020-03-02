@@ -1,0 +1,69 @@
+# Maintainer: Levente Polyak <anthraxx[at]archlinux[dot]org>
+# Maintainer: Pierre Schmitz <pierre@archlinux.de>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - patches to fix issues with how we use the tools
+
+pkgname=devtools-alarm
+_pkgname=devtools
+pkgver=20190912
+pkgrel=1
+pkgdesc='Tools for Arch Linux ARM package maintainers'
+arch=('any')
+license=('GPL')
+url='https://git.archlinux.org/devtools.git/'
+conflicts=('devtools')
+provides=('devtools')
+depends=('bash' 'openssh' 'subversion' 'rsync' 'arch-install-scripts'
+         'git' 'bzr' 'mercurial' 'diffutils' 'util-linux')
+makedepends=('asciidoc')
+optdepends=('btrfs-progs: btrfs support')
+source=(https://sources.archlinux.org/other/${_pkgname}/${_pkgname}-${pkgver}.tar.gz{,.sig}
+        '0001-makechrootpkg-cache-dir.patch'
+        '0002-arch-nspawn-keep-mirrorlist.patch'
+        '0003-makechrootpkg-distcc.patch'
+        '0004-arch-nspawn-arm-fix.patch'
+        '0005-makechrootpkg-no-default-logging.patch'
+        '0006-archbuild-no-setarch.patch'
+        '0007-makechrootpkg-don-t-delete-MAKEFLAGS-and-PACKAGER.patch')
+validpgpkeys=('487EACC08557AD082088DABA1EB2638FF56C0C53'
+              '4AA4767BBC9C4B1D18AE28B77F2D434B9741E8AC'
+              '86CFFCA918CF3AF47147588051E8B148A9999C34'
+              '8FC15A064950A99DD1BD14DD39E4B877E62EB915'
+              '8218F88849AAC522E94CF470A5E9288C4FA415FA'
+              'B81B051F2D7FC867AAFF35A58DBD63B82072D77A'
+              'F3691687D867B81B51CE07D9BBE43771487328A9'
+              '6645B0A8C7005E78DB1D7864F99FFE0FEAE999BD'
+              'E240B57E2C4630BA768E2F26FC1B547C8D8172C8')
+sha256sums=('0f6c83cdfb13b27292b034a5f4bfa46293830f879d4af5226079af30795992fb'
+            'SKIP'
+            'd562fda07e66ff8f4228abda31ba4abf26561c203234baa479891e1b6e8e286f'
+            'd2201d40292832363188fb9a0541dd20af7c9feb71e62db6077926f8ce52315a'
+            'edfe6b8dd600ca16116860ffb0fa0a998d78d5951f9aad581a3c5b1a40ac0630'
+            '57bbf498932a454bd51f825f09fbe0066d6588f1b41978c09ce337c079758dc2'
+            '0917f6aaabf75f75b74a08f3f244dbe5f6369d115d6e65c8c2fb0b91bc71e3ca'
+            '892c9705e3d37b9a2fc72b60fae798127864a01bab40e825f1a0bc910ee7e330'
+            '26acd09ac3ee2424dc0f93a51472ad4644cd442a44a6fb87efb23e5ea2c2416e')
+
+prepare() {
+  cd "${_pkgname}-${pkgver}"
+  patch -p1 -i ../0001-makechrootpkg-cache-dir.patch
+  patch -p1 -i ../0002-arch-nspawn-keep-mirrorlist.patch
+  patch -p1 -i ../0003-makechrootpkg-distcc.patch
+  patch -p1 -i ../0004-arch-nspawn-arm-fix.patch
+  patch -p1 -i ../0005-makechrootpkg-no-default-logging.patch
+  patch -p1 -i ../0006-archbuild-no-setarch.patch
+  patch -p1 -i ../0007-makechrootpkg-don-t-delete-MAKEFLAGS-and-PACKAGER.patch
+}
+
+build() {
+  cd ${_pkgname}-${pkgver}
+  make PREFIX=/usr
+}
+
+package() {
+  cd ${_pkgname}-${pkgver}
+  make PREFIX=/usr DESTDIR="${pkgdir}" install
+}
+
+# vim: ts=2 sw=2 et:

@@ -1,0 +1,42 @@
+# Maintainer: Kai Uwe Jesussek <kajot@gmx.net>
+
+pkgname=mouse-emul-git
+pkgver=13.3b2012c
+pkgver(){
+	cd $srcdir/mouse-emul
+	echo $(git rev-list --count master).$(git rev-parse --short master)
+}
+pkgrel=1
+epoch=1
+plugrel=1
+pkgdesc="Tiny mouse emulator"
+arch=('arm' 'i686' 'x86_64')
+license=('GPL2')
+provides=('mouse-emul')
+source=("rc-d-mouse-emul" "conf-d-mouse-emul"
+		"git://github.com/anarsoul/mouse-emul.git"
+		"mouse-emul.service")
+url="https://github.com/anarsoul/mouse-emul"
+makedepends=('git')
+md5sums=('SKIP')
+
+_gitname=mouse-emul
+
+build() {
+  cd ${srcdir}/${_gitname}
+  make
+}
+package() {
+  cd ${srcdir}/${_gitname}
+
+  make PREFIX=/usr DESTDIR=${pkgdir} install
+
+  install -Dm755 ${srcdir}/rc-d-mouse-emul ${pkgdir}/etc/rc.d/mouse-emul
+  install -Dm644 ${srcdir}/conf-d-mouse-emul ${pkgdir}/etc/conf.d/mouse-emul
+  install -Dm644 "$srcdir/mouse-emul.service" "$pkgdir/usr/lib/systemd/system/mouse-emul.service"
+  touch ${pkgdir}/etc/mouse-emulrc
+}
+md5sums=('47b35f3d6281dd67add9ea9c62bfc782'
+         '9771ecbee361c73e6f50b64fe1083a38'
+         'SKIP'
+         '11c2e47a35bd62d380393b4042556d2b')

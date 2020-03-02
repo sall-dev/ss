@@ -1,0 +1,44 @@
+# U-Boot: Wandboard
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgname=uboot-wandboard
+pkgver=2018.03
+pkgrel=1
+pkgdesc="U-Boot for Wandboard"
+arch=('armv7h')
+url="http://git.denx.de/u-boot.git/"
+license=('GPL')
+makedepends=('git' 'bc')
+replaces=('uboot-wandboard-solo' 'uboot-wandboard-dual' 'uboot-wandboard-quad')
+install=${pkgname}.install
+backup=('boot/boot.txt' 'boot/boot.scr')
+source=("ftp://ftp.denx.de/pub/u-boot/u-boot-${pkgver}.tar.bz2"
+        'boot.txt'
+        'mkscr')
+md5sums=('02922bdf0ee003fe25bfc32749ffdeab'
+         '95f60c0ae1315e986d8a2aee15d5f854'
+         '021623a04afd29ac3f368977140cfbfd')
+
+build() {
+  cd u-boot-${pkgver}
+  
+  unset LDFLAGS
+  
+  make distclean
+  make wandboard_defconfig
+  echo 'CONFIG_IDENT_STRING=" Arch Linux ARM"' >> .config
+  make EXTRAVERSION=-${pkgrel}
+}
+
+package() {
+  cd u-boot-${pkgver}
+
+  mkdir -p "${pkgdir}"/boot
+  cp SPL u-boot.img "${pkgdir}"/boot
+
+  install -Dm644 ../boot.txt "${pkgdir}"/boot/boot.txt
+  tools/mkimage -A arm -O linux -T script -C none -n "U-Boot boot script" -d ../boot.txt "${pkgdir}"/boot/boot.scr
+  install -Dm755 ../mkscr "${pkgdir}"/boot/mkscr
+}

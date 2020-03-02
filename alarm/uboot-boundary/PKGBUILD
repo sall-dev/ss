@@ -1,0 +1,51 @@
+# U-Boot: Nitrogen6x/SabreLite
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgname='uboot-boundary'
+pkgver=2016.11
+pkgrel=1
+pkgdesc="U-Boot for Nitrogen6x/SabreLite"
+arch=('armv7h')
+url='http://www.denx.de/wiki/U-Boot/WebHome'
+license=('GPL')
+install=$pkgname.install
+backup=('boot/boot.txt' 'boot/boot.scr')
+depends=('mtd-utils')
+makedepends=('bc' 'dtc' 'git')
+source=("ftp://ftp.denx.de/pub/u-boot/u-boot-${pkgver}.tar.bz2"
+        '0001-arch-linux-arm-modifications.patch'
+        'boot.txt'
+        'mkscr')
+md5sums=('ca1f6e019d08aff8d0ca1beb2e66737d'
+         '872b9eaa45228ac33e8e0a7383b9d0e3'
+         '95f60c0ae1315e986d8a2aee15d5f854'
+         '021623a04afd29ac3f368977140cfbfd')
+
+prepare() {
+  cd u-boot-${pkgver}
+
+  git apply ../0001-arch-linux-arm-modifications.patch
+}
+
+build() {
+  cd u-boot-${pkgver}
+
+  unset CFLAGS CXXFLAGS CPPFLAGS
+
+  make distclean
+  make nitrogen6q_config
+  make EXTRAVERSION=-${pkgrel}
+}
+
+package() {
+  cd u-boot-${pkgver}
+
+  mkdir -p ${pkgdir}/boot
+  cp u-boot.imx ${pkgdir}/boot
+
+  install -Dm644 ../boot.txt "${pkgdir}"/boot/boot.txt
+  tools/mkimage -A arm -O linux -T script -C none -n "U-Boot boot script" -d ../boot.txt "${pkgdir}"/boot/boot.scr
+  install -Dm755 ../mkscr "${pkgdir}"/boot/mkscr
+}

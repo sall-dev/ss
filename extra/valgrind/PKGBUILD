@@ -1,0 +1,118 @@
+# Maintainer: Levente Polyak <anthraxx[at]archlinux[dot]org>
+# Contributor: Dan McGee <dan@archlinux.org>
+# Contributor: Allan McRae <allan@archlinux.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - hold for toolchain update, only build for v7/v8
+#  - patch from Fedora for AArch64
+#  - removed lib32 package make/optdepends
+
+buildarch=12
+noautobuild=1
+
+pkgname=valgrind
+_commit=608cb11914e5f23d0fc12c61dad29c5c7952a1de  # tags/VALGRIND_3_15_0^0
+pkgver=3.15.0
+pkgrel=1
+pkgdesc='Tool to help find memory-management problems in programs'
+arch=('x86_64')
+license=('GPL')
+url='http://valgrind.org/'
+depends=('glibc' 'perl')
+makedepends=('gdb' 'git' 'docbook-xml'
+             'docbook-xsl' 'docbook-sgml')
+checkdepends=('procps-ng')
+provides=('valgrind-multilib')
+replaces=('valgrind-multilib')
+options=('!emptydirs' '!strip')
+source=("git+https://repo.or.cz/valgrind.git#commit=$_commit"
+        valgrind-3.7.0-respect-flags.patch
+        valgrind-3.13.0-arm64-hwcap.patch)
+md5sums=('SKIP'
+         '470d9881870aacc210b7a6efb64cc9a9'
+         'b7c24e58fa058578c9bf6fef4ccdd47d')
+sha512sums=('SKIP'
+            'e0cec39381cefeca09ae4794cca309dfac7c8693e6315e137e64f5c33684598726d41cfbb4edf764fe985503b13ff596184ca5fc32b159d500ec092e4cf8838c'
+            '5af853399c6abdf8016fd1c2be854b3952b7d7e9ca16c870f84eed72e606e639d5f64de32e60105899f5201b53156380ae460111e05209e843301492742c9bfd')
+
+pkgver() {
+  cd valgrind
+  git describe --tags --always|sed -e 's|-|+|g' -e 's|VALGRIND_||g' -e 's|_|.|g'
+}
+
+prepare() {
+  cd valgrind
+  patch -Np1 < ../valgrind-3.7.0-respect-flags.patch
+  patch -Np1 < ../valgrind-3.13.0-arm64-hwcap.patch
+  sed -i 's|sgml/docbook/xsl-stylesheets|xml/docbook/xsl-stylesheets-1.79.2|' docs/Makefile.am
+
+  autoreconf -ifv
+}
+
+build() {
+  # valgrind does not like some of our flags
+  CPPFLAGS=${CPPFLAGS/-D_FORTIFY_SOURCE=2/}
+  CFLAGS=${CFLAGS/-fno-plt/}
+  CXXFLAGS=${CXXFLAGS/-fno-plt/}
+
+  cd valgrind
+  ./configure \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --localstatedir=/var \
+    --libexecdir=/usr/lib \
+    --mandir=/usr/share/man
+  make
+  make -C docs man-pages
+}
+
+check() {
+  cd valgrind
+
+  # Make sure a basic binary runs. There should be no errors.
+  ./vg-in-place --error-exitcode=1 /bin/true
+
+  # Make sure no extra FLAGS leak through, the testsuite
+  # sets all flags necessary. See also configure above.
+  make check CPPFLAGS= CFLAGS= CXXFLAGS= LDFLAGS=
+
+  # XXX: run full regtest but only report issues some tests fail duo
+  # current toolchain and expectations, take a manual look if its fine
+  echo "===============TESTING==================="
+  make regtest || :
+
+  # Make sure test failures show up in build.log
+  # Gather up the diffs (at most the first 20 lines for each one)
+  local f max_lines=20 diff_files=()
+  mapfile -d '' diff_files < <(find . -name '*.diff' -print0 | sort -z)
+  if (( ${#diff_files[@]} == 0 )); then
+    echo "Congratulations, all tests passed!"
+  else
+    warning "Some tests failed!"
+    for f in "${diff_files[@]}"; do
+        echo "================================================="
+        echo "${f}"
+        echo "================================================="
+        if (( $(wc -l < "${f}") < ${max_lines} )); then
+          cat "${f}"
+        else
+          head -n ${max_lines} "${f}"
+          echo "<truncated beyond ${max_lines} lines>"
+        fi
+    done | tee diffs
+  fi
+  echo "===============END TESTING==============="
+}
+
+package() {
+  cd valgrind
+  make DESTDIR="${pkgdir}" install
+
+  install -Dm644 docs/*.1 -t "$pkgdir/usr/share/man/man1"
+
+  if check_option 'debug' n; then
+    find "${pkgdir}/usr/bin" -type f -executable -exec strip $STRIP_BINARIES {} + || :
+  fi
+}
+
+# vim: ts=2 sw=2 et:

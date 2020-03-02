@@ -1,0 +1,27 @@
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=8
+
+pkgname=skales
+pkgver=r86.1ccd3e9
+pkgrel=1
+arch=('any')
+pkgdesc="Qualcomm boot image utilities"
+url="https://www.codeaurora.org/cgit/quic/kernel/skales/"
+license=('custom')
+depends=('python' 'dtc')
+makedepends=('git')
+source=('git://codeaurora.org/quic/kernel/skales')
+md5sums=('SKIP')
+
+pkgver() {
+  cd ${pkgname}
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd ${pkgname}
+  install -d "${pkgdir}/usr/bin"
+  install -m755 dtbTool "${pkgdir}/usr/bin"
+  install -m755 mkbootimg "${pkgdir}/usr/bin"
+}

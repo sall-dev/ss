@@ -1,0 +1,62 @@
+# Maintainer: David Runge <dvzrv@archlinux.org>
+# Contributor: Eric Bélanger <eric@archlinux.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - configure with --disable-sse
+#  - explicitly link v5/v6 with libatomic
+
+pkgname=audacity
+pkgver=2.3.3
+pkgrel=2
+epoch=1
+pkgdesc="A program that lets you manipulate digital audio waveforms"
+arch=('x86_64')
+url="https://audacityteam.org"
+license=('GPL2' 'CCPL')
+groups=('pro-audio')
+# upstream enquired via mail about:
+# vendors/requires older version of portaudio
+# vendors/doesn't detect system version of portmidi
+depends=('expat' 'gcc-libs' 'gdk-pixbuf2' 'glib2' 'gtk3' 'libFLAC.so'
+'libFLAC++.so' 'libid3tag' 'libjack.so' 'liblilv-0.so' 'libmad' 'libogg'
+'libsndfile' 'libsoxr' 'libsuil-0.so' 'libtwolame.so' 'libvamp-hostsdk.so'
+'libvorbis.so' 'libvorbisenc.so' 'libvorbisfile.so' 'portsmf' 'soundtouch'
+'wxgtk3')
+makedepends=('cmake' 'ffmpeg' 'lv2')
+optdepends=('ffmpeg: additional import/export capabilities')
+source=("https://github.com/${pkgname}/${pkgname}/archive/Audacity-${pkgver}.tar.gz")
+sha512sums=('0789d5bc27933c688b8c99e0d9d9ca65f3b0c59cf74a235feee094a1815bdb59a32a4f50d2938b8fb9d72b0c5ba88451d02f90c5163931774a2088463562c5ef')
+
+prepare() {
+  mv -v "${pkgname}-Audacity-${pkgver}" "${pkgname}-${pkgver}"
+  cd "${pkgname}-${pkgver}"
+  autoreconf -vfi
+}
+
+build() {
+  cd "${pkgname}-${pkgver}"
+  [[ $CARCH == "arm" || $CARCH == "armv6h" ]] && LIBS="-latomic"
+  WX_CONFIG=wx-config-gtk3 LIBS=$LIBS ./configure --prefix="/usr" \
+    --with-libsndfile="system" \
+    --with-ffmpeg="system" \
+    --with-expat="system" \
+    --with-lame="system" \
+    --with-libsoxr="system" \
+    --with-portaudio \
+    --with-portmidi \
+    --with-libflac \
+    --with-libid3tag \
+    --with-libsamplerate \
+    --with-sbsms \
+    --with-soundtouch \
+    --with-libtwolame \
+    --with-libvorbis \
+    --with-lv2 \
+    --disable-sse
+  make
+}
+
+package() {
+  cd "${pkgname}-${pkgver}"
+  make DESTDIR="${pkgdir}" install
+}

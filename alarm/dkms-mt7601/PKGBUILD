@@ -1,0 +1,30 @@
+# Maintainer of AUR mt7601-git package: Cyker Way < cykerway at gmail dot com >
+
+_gitname=mt7601
+pkgname=dkms-mt7601
+pkgver=2015.06.08
+pkgrel=1
+pkgdesc="Linux driver for MediaTek MT7601U chip with patch for stability and performance"
+arch=('any')
+url="https://github.com/porjo/$_gitname"
+license=('GPL')
+install=dkms-mt7601.install
+depends=('linux>3.19' 'dkms' 'linux-headers>3.19')
+makedepends=('git')
+options=(!strip)
+source=("git+${url}.git" "dkms.conf")
+
+md5sums=('SKIP' 'fee0be459a26a0c9f4a8afcd7ec0a2a6')
+
+pkgver() {
+   cd "$srcdir/$_gitname"
+   git log -1 --format="%cd" --date=short | sed 's|-|.|g'
+}
+
+package() {
+   cp dkms.conf "$srcdir/$_gitname/src"
+   cd "$srcdir/$_gitname/src"
+   mkdir -p "$pkgdir/usr/src/mt7601-$pkgver" 
+   cp -r . "$pkgdir/usr/src/mt7601-$pkgver" 
+   install -Dm644 RT2870STA.dat "$pkgdir/etc/Wireless/RT2870STA/RT2870STA.dat"
+}

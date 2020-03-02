@@ -1,0 +1,48 @@
+# Maintainer: Felix Yan <felixonmars@archlinux.org>
+# Maintainer: Antonio Rojas <arojas@archlinux.org>
+# Contributor: Andrea Scarpino <andrea@archlinux.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - drop julia make/optdepends, doesn't build on ARM
+
+pkgname=cantor
+pkgver=19.12.2
+pkgrel=1
+pkgdesc="KDE Frontend to Mathematical Software"
+url="https://kde.org/applications/education/cantor/"
+arch=(x86_64)
+license=(GPL LGPL FDL)
+groups=(kde-applications kdeedu)
+depends=(analitza libspectre kpty ktexteditor knewstuff libqalculate hicolor-icon-theme qt5-xmlpatterns poppler-qt5)
+makedepends=(extra-cmake-modules python kdoctools luajit r)
+optdepends=('maxima: Maxima backend'
+            'octave: Octave backend'
+            'r: R backend'
+            'luajit: LUA backend'
+            'python: Python 3 backend'
+            'sagemath: SageMath backend'
+            'julia: Julia backend')
+source=("https://download.kde.org/stable/release-service/$pkgver/src/$pkgname-$pkgver.tar.xz"{,.sig})
+sha256sums=('afd25e633372fe829fe2ebe8270060574ca37b11473112da56041bdaed495531'
+            'SKIP')
+validpgpkeys=(CA262C6C83DE4D2FB28A332A3A6A4DB839EAA6D7  # Albert Astals Cid <aacid@kde.org>
+              F23275E4BF10AFC1DF6914A6DBD2CE893E2D1C87) # Christoph Feck <cfeck@kde.org>
+
+prepare() {
+  mkdir -p build
+
+  cd $pkgname-$pkgver
+#  patch -p1 -i ../cantor-no-python2.patch # Fix build without python 2
+}
+
+build() {
+  cd build
+  cmake ../$pkgname-$pkgver \
+    -DBUILD_TESTING=OFF
+  make
+}
+
+package() {
+  cd build
+  make DESTDIR="$pkgdir" install
+}

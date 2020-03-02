@@ -1,0 +1,44 @@
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgname=gst-imx
+pkgver=0.13.0.r0.g048d596
+pkgrel=1
+pkgdesc="GStreamer plugins for i.MX platforms"
+arch=('armv7h')
+license=('LGPL')
+url="https://github.com/Freescale/gstreamer-imx"
+depends=('gst-plugins-base-libs' 'gst-plugins-bad' 'libimxvpuapi' 'imx-gpu-viv-fb' 'imx-gpu-viv-g2d' 'pango' 'cairo')
+makedepends=('python2' 'linux-imx6-headers' 'git')
+source=('git+https://github.com/Freescale/gstreamer-imx.git')
+md5sums=('SKIP')
+
+LDFLAGS+=' -L/opt/fsl/lib'
+CPPFLAGS+=' -I/opt/fsl/include'
+
+pkgver() {
+  cd gstreamer-imx
+  ( set -o pipefail
+    git describe --long --tags 2>/dev/null | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+  )
+}
+
+build() {
+  cd gstreamer-imx
+
+  export PKG_CONFIG_PATH='/opt/fsl/lib/pkgconfig'
+
+  python2 waf configure --prefix=/usr \
+    --with-package-name="GStreamer plugins for i.MX platforms" \
+    --with-package-origin="https://github.com/archlinuxarm/PKGBUILDs/tree/master/alarm/gst-imx" \
+    --egl-platform=fb \
+    --kernel-headers=/usr/src/linux-$(pacman -Q linux-imx6-headers | grep -Eo "[^\ ]+$")-ARCH/include
+  
+  python2 waf build $MAKEFLAGS
+}
+
+package() {
+  cd gstreamer-imx
+  python2 waf install --destdir="$pkgdir"
+}

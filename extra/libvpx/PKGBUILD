@@ -1,0 +1,64 @@
+# Maintainer: Maxime Gauduin <alucryd@archlinux.org>
+# Contributor: Ionut Biru <ibiru@archlinux.org>
+# Contributor: Bartłomiej Piotrowski <bpiotrowski@archlinux.org>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - patch to fix building
+#  - disable neon and neon-asm
+
+pkgname=libvpx
+pkgver=1.8.2
+pkgrel=1
+pkgdesc='VP8 and VP9 codec'
+arch=(x86_64)
+url=http://www.webmproject.org/
+license=(BSD)
+makedepends=(
+  git
+  nasm
+)
+provides=(libvpx.so)
+source=(git+https://chromium.googlesource.com/webm/libvpx#tag=7ec7a33a081aeeb53fed1a8d87e4cbd189152527
+        0001-ARM-fixes.patch)
+sha256sums=('SKIP'
+            'fde43bd72223854fe6d7aadd4b8d9947de902124fec01a5578ca12ca9436c810')
+
+pkgver() {
+  cd libvpx
+
+  git describe --tags | sed 's/^v//'
+}
+
+prepare() {
+  cd libvpx
+
+  patch -p1 -i ../0001-ARM-fixes.patch
+}
+
+build() {
+  cd libvpx
+
+  [[ $CARCH != "aarch64" ]] && CONFIG="--disable-neon --disable-neon-asm"
+  ./configure \
+    --prefix=/usr \
+    --disable-install-docs \
+    --disable-install-srcs \
+    --enable-pic \
+    --enable-postproc \
+    --enable-runtime-cpu-detect \
+    --enable-shared \
+    --enable-vp8 \
+    --enable-vp9 \
+    --enable-vp9-highbitdepth \
+    --enable-vp9-temporal-denoising $CONFIG
+  make
+}
+
+package() {
+  cd libvpx
+
+  make DIST_DIR="${pkgdir}"/usr install
+  install -Dm 644 LICENSE -t "${pkgdir}"/usr/share/licenses/libvpx/
+}
+
+# vim: ts=2 sw=2 et:

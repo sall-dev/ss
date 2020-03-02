@@ -1,0 +1,42 @@
+# U-Boot: UDOO
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgname=uboot-udoo
+pkgver=2016.11
+pkgrel=1
+pkgdesc="U-Boot for UDOO Dual and Quad"
+arch=('armv7h')
+url="http://git.denx.de/u-boot.git/"
+makedepends=('bc' 'dtc' 'git')
+replaces=('uboot-udoo-dual' 'uboot-udoo-quad')
+license=('GPL')
+install=${pkgname}.install
+source=("ftp://ftp.denx.de/pub/u-boot/u-boot-${pkgver/rc/-rc}.tar.bz2"
+        '0001-arch-linux-arm-modifications.patch')
+md5sums=('ca1f6e019d08aff8d0ca1beb2e66737d'
+         'c4323b9ac181ac8f526349eed88e0ded')
+
+prepare() {
+  cd u-boot-${pkgver/rc/-rc}
+
+  git apply ../0001-arch-linux-arm-modifications.patch
+}
+
+build() {
+  cd u-boot-${pkgver/rc/-rc}
+  
+  unset CFLAGS CXXFLAGS LDFLAGS
+  
+  make distclean
+  make udoo_defconfig
+  make EXTRAVERSION=-${pkgrel}
+}
+
+package_uboot-udoo() {
+  cd u-boot-${pkgver/rc/-rc}
+
+  mkdir -p "${pkgdir}"/boot
+  cp SPL u-boot.img "${pkgdir}"/boot
+}

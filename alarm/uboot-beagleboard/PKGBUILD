@@ -1,0 +1,41 @@
+# U-Boot: BeagleBoard and BeagleBoard-xM
+# Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
+
+buildarch=4
+
+pkgname=uboot-beagleboard
+pkgver=2016.11
+pkgrel=1
+pkgdesc="U-Boot for BeagleBoard and BeagleBoard-xM"
+arch=('armv7h')
+url="http://git.denx.de/u-boot.git/"
+license=('GPL')
+makedepends=('git' 'bc')
+backup=('boot/uEnv.txt')
+source=("ftp://ftp.denx.de/pub/u-boot/u-boot-${pkgver/rc/-rc}.tar.bz2"
+        '0001-arch-linux-arm-modifications.patch'
+        'uEnv.txt')
+md5sums=('ca1f6e019d08aff8d0ca1beb2e66737d'
+         'f193e2494de5c54a582d7cffd0a141e7'
+         'd41d8cd98f00b204e9800998ecf8427e')
+
+prepare() {
+  cd u-boot-${pkgver/rc/-rc}
+  git apply ../0001-arch-linux-arm-modifications.patch
+}
+
+build() {
+  cd u-boot-${pkgver/rc/-rc}
+
+  unset LDFLAGS CFLAGS CXXFLAGS
+
+  make distclean 
+  make omap3_beagle_config
+  make EXTRAVERSION=-${pkgrel}
+}
+
+package() {
+  cd u-boot-${pkgver/rc/-rc}
+  mkdir -p "${pkgdir}"/boot
+  cp MLO u-boot.img "${srcdir}"/uEnv.txt "${pkgdir}"/boot
+}

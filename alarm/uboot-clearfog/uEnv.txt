@@ -1,0 +1,8 @@
+## Tell kernel where rootfs is located
+# root=/dev/mmcblk0p1
+
+## Optional kernel arguments
+# optargs=elevator=cfq
+
+## Name of a different dtb file. Must be in /boot/dtbs/
+# fdtfile=armada-388-clearfog-base.dtb

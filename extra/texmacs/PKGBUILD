@@ -1,0 +1,57 @@
+# Maintainer: Ronald van Haren <ronald.archlinux.org>
+# Contributor: Damir Perisa <damir.perisa@bluewin.ch> # Contributor: Christopher Reimer <c.reimer1993@gmail.com>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - patch to fix size_t check on ARM
+
+pkgname=texmacs
+pkgver=1.99.12
+pkgrel=1
+pkgdesc="Free scientific text editor, inspired by TeX and GNU Emacs. WYSIWYG editor TeX-fonts and CAS-interface (Giac, GTybalt, Macaulay 2, Maxima, Octave, Pari, Qcl, R and Yacas) in one."
+arch=('x86_64')
+url="http://www.texmacs.org/"
+license=('GPL')
+depends=('perl' 'guile1.8' 'texlive-core' 'python2' 'libxext' 'freetype2' 'qt5-base')
+# do not remove texlive-core dependency, as it is needed!
+optdepends=('transfig: convert images using fig2ps'
+            'gawk: conversion of some files'
+	    'ghostscript: rendering ps files'
+            'imagemagick: convert images'
+            'aspell: spell checking')
+makedepends=('ghostscript' 'cmake')
+source=(http://www.texmacs.org/Download/ftp/tmftp/source/TeXmacs-${pkgver}-src.tar.gz
+        fix-size_t-check.patch)
+options=('!emptydirs')
+sha256sums=('6a513d2aa8d1bf851b603a023551cc36e170093e9a9a14099b75d4c3cb2a0812'
+            '09de18741b6a3b8590e76be52c571b2799b906cc3ecdd0eb6594c2ffdef3ad83')
+	
+prepare() {
+  cd TeXmacs-${pkgver}-src
+
+  find -name '*.py' | xargs sed -i 's/env python/env python2/'
+  sed -i 's/"python"/"python2"/' plugins/python/progs/init-python.scm
+
+  patch -p1 -i ../fix-size_t-check.patch
+}
+
+build() {
+  cd TeXmacs-${pkgver}-src
+  
+  mkdir -p build
+  cd build
+
+  cmake .. \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DGUILECONFIG_EXECUTABLE=/usr/bin/guile-config1.8
+  make
+}
+
+package() {
+  cd TeXmacs-${pkgver}-src/build
+  make DESTDIR=${pkgdir} install
+
+ # fix fig2ps script
+ sed -i 's|${prefix}|/usr|' "${pkgdir}/usr/bin/fig2ps"
+ # fix launch script
+ sed -e 's|\@CONFIG_LIB_PATH\@|LD_LIBRARY_PATH|g' -i "$pkgdir"/usr/bin/texmacs
+}

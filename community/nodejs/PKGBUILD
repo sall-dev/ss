@@ -1,0 +1,66 @@
+# Maintainer: Felix Yan <felixonmars@archlinux.org>
+# Contributor  Bartłomiej Piotrowski <bpiotrowski@archlinux.org>
+# Contributor: Thomas Dziedzic < gostrc at gmail >
+# Contributor: James Campos <james.r.campos@gmail.com>
+# Contributor: BlackEagle < ike DOT devolder AT gmail DOT com >
+# Contributor: Dongsheng Cai <dongsheng at moodle dot com>
+# Contributor: Masutu Subric <masutu.arch at googlemail dot com>
+# Contributor: TIanyi Cui <tianyicui@gmail.com>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - set config and gyp flags
+
+buildarch=28
+
+pkgname=nodejs
+pkgver=13.9.0
+pkgrel=1
+pkgdesc='Evented I/O for V8 javascript'
+arch=('x86_64')
+url='https://nodejs.org/'
+license=('MIT')
+depends=('openssl' 'zlib' 'icu' 'libuv' 'c-ares' 'libnghttp2') # 'http-parser' 'v8')
+makedepends=('python' 'procps-ng')
+optdepends=('npm: nodejs package manager')
+source=("nodejs-$pkgver.tar.gz::https://github.com/nodejs/node/archive/v$pkgver.tar.gz")
+sha512sums=('e32572cd833d7f45f56b5fa7ff6e5940c1fe4c73e8793e65ea6988d2908ed78844bf5e45f46237f27a0b00e08cf8f57473098c0bf9e496f763437bc2247e0c07')
+
+build() {
+  cd node-$pkgver
+
+  [[ "$CARCH" == "armv6h" ]] && export CONFIG="--with-arm-float-abi=hard --with-arm-fpu=vfp" && export GYPFLAGS="-Darm_thumb -Darm_float_abi=hard -Darm_version=6 -Darm_fpu=vfpv2"
+  [[ "$CARCH" == "armv7h" ]] && export CONFIG="--with-arm-float-abi=hard --with-arm-fpu=vfpv3-d16" && export GYPFLAGS="-Darm_thumb -Darm_float_abi=hard -Darm_version=7 -Darm_fpu=vfpv3-d16"
+
+  ./configure \
+    --prefix=/usr \
+    --with-intl=system-icu \
+    --without-npm \
+    --shared-openssl \
+    --shared-zlib \
+    --shared-libuv \
+    --experimental-http-parser \
+    --shared-cares \
+    --shared-nghttp2 \
+    ${CONFIG}
+    # --shared-v8
+    # --shared-http-parser
+
+  make
+}
+
+check() {
+  cd node-$pkgver
+  # Expected failure: https://github.com/nodejs/node/issues/11627
+  make test || warning "Tests failed"
+}
+
+package() {
+  cd node-$pkgver
+
+  make DESTDIR="$pkgdir" install
+
+  install -D -m644 LICENSE \
+    "$pkgdir"/usr/share/licenses/nodejs/LICENSE
+}
+
+# vim:set ts=2 sw=2 et:
